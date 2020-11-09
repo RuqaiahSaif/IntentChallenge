@@ -1,5 +1,8 @@
 package com.example1.intentchallenge
-
+import android.content.Context
+import android.Manifest.permission.READ_CONTACTS
+import android.Manifest.permission.WRITE_CONTACTS
+import android.content.ContentResolver;
 import android.Manifest.permission.WRITE_CONTACTS
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -22,9 +25,9 @@ lateinit var message: ImageView
 lateinit var place: ImageView
 lateinit var github: ImageView
 lateinit var contact: ImageView
-private const val SELECT_PHONE_NUMBER = 111
 
 class MainActivity : AppCompatActivity() {
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -63,6 +66,94 @@ class MainActivity : AppCompatActivity() {
                 startActivity(webIntent)
             }
         }
+      //////////////// for check contact/////////////////
+        fun contactExists(context: Context, number: String): Boolean {
+          if (number != null) {
+              val cr: ContentResolver? = context.getContentResolver()
+              val contatUri = ContactsContract.CommonDataKinds.Phone.CONTENT_URI
+              val queryField = arrayOf(ContactsContract.CommonDataKinds.Phone.NUMBER)
+
+              var cursor = cr?.query(contatUri, queryField, null, null, null)
+
+              while (cursor?.moveToNext() != null) {
+                  var contactNumber: String =
+                      (cursor?.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER)).toString()
+
+                  if (number.equals(contactNumber)) {
+                      return true
+                  }
+              }
+              return false
+          } else {
+              return false
+          }
+      }
+
+
+
+
+
         contact = findViewById(R.id.contact)
+        contact.setOnClickListener() {
+            val name = "roqia saif"
+            val phone = "770695605"
+
+            if (ContextCompat.checkSelfPermission(this@MainActivity,android.Manifest.permission.WRITE_CONTACTS) !==  PackageManager.PERMISSION_GRANTED) {
+                if (ActivityCompat.shouldShowRequestPermissionRationale(this@MainActivity,android.Manifest.permission.WRITE_CONTACTS)) {
+                    ActivityCompat.requestPermissions(this@MainActivity, arrayOf(android.Manifest.permission.WRITE_CONTACTS), 1)
+                } else {
+                    ActivityCompat.requestPermissions(this@MainActivity,
+                        arrayOf(android.Manifest.permission.WRITE_CONTACTS), 1)
+                }
+            }
+
+
+
+            if(contactExists(this,phone)){
+
+                val callIntent = Intent().apply {
+                    action =Intent.ACTION_DIAL
+                    data = Uri.parse("tel:$phone")
+                }
+                if (callIntent.resolveActivity(packageManager) != null) {
+                    startActivity(callIntent)
+                }
+
+            }
+
+            val cotactIntent = Intent(ContactsContract.Intents.Insert.ACTION)
+            cotactIntent.setType(ContactsContract.RawContacts.CONTENT_TYPE)
+            cotactIntent.putExtra(ContactsContract.Intents.Insert.NAME, name)
+            cotactIntent.putExtra(ContactsContract.Intents.Insert.PHONE, phone)
+            if (cotactIntent.resolveActivity(packageManager) != null) {
+                startActivity(cotactIntent)
+            }
+        }
+
+            }
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
+        when (requestCode) {
+            1 -> {
+                if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    if ((ContextCompat.checkSelfPermission(
+                            this@MainActivity,
+                            android.Manifest.permission.WRITE_CONTACTS
+                        ) ===
+                                PackageManager.PERMISSION_GRANTED)
+                    ) {
+                        Toast.makeText(this, "Permission Granted", Toast.LENGTH_SHORT).show()
+                    }
+                } else {
+                    Toast.makeText(this, "Permission Denied", Toast.LENGTH_SHORT).show()
+                }
+                return
+            }
+        }
     }
-}
+        }
+
+
+
+
+
+
